@@ -1,42 +1,26 @@
 import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
+import { useAddPostMutation } from '../../api/apiSlice'
 import { selectAllUsers } from '../users/usersSlice'
-
-// import { postAdded } from './postsSlice'
-import { addNewPost } from './postsSlice'
 
 export const AddPostForm = () => {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [userId, setUserId] = useState('')
-  const [addRequestStatus, setAddRequestStatus] = useState('idle')
 
-  const dispatch = useDispatch()
-  // const users = useSelector((state) => state.users)
+  const [addPost, {isLoading}] = useAddPostMutation()
   const users = useSelector(selectAllUsers)
 
   const onTitleChanged = (e) => setTitle(e.target.value)
   const onContentChanged = (e) => setContent(e.target.value)
   const onAuthorChanged = (e) => setUserId(e.target.value)
 
-  // const canSave = Boolean(title) && Boolean(content) && Boolean(userId)
-
-  // const onSavePostClicked = () => {
-  //   if (title && content) {
-  //     dispatch(postAdded(title, content, userId))
-  //     setTitle('')
-  //     setContent('')
-  //     setUserId('')
-  //   }
-  // }
-
-  const canSave = [title, content, userId].every(Boolean) && addRequestStatus === 'idle'
+  const canSave = [title, content, userId].every(Boolean) && !isLoading
 
   const onSavePostClicked = async () => {
     if (canSave) {
       try {
-        setAddRequestStatus('pending')
-        await dispatch(addNewPost({ title, content, user: userId })).unwrap()
+        await addPost({ title, content, user: userId }).unwrap()
         setTitle('')
         setContent('')
         setUserId('')
@@ -45,8 +29,6 @@ export const AddPostForm = () => {
         setTitle('')
         setContent('')
         setUserId('')
-      } finally {
-        setAddRequestStatus('idle')
       }
     }
   }
