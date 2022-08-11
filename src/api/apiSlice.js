@@ -9,10 +9,14 @@ export const apiSlice = createApi({
   endpoints: builder => ({
     getPosts: builder.query({
       query: () => '/posts',
-      providesTags: ['Post'],
+      providesTags: (result = [], error, arg) => [
+        'Post',
+        ...result.map(({ id }) => ({ type: 'Post', id }))
+      ]
     }),
     getPost: builder.query({
-      query: id => `/posts/${id}`
+      query: id => `/posts/${id}`,
+      providesTags: (result, error, arg) => [{ type: 'Post', id: arg }]
     }),
     addPost: builder.mutation({
       query: post => ({
@@ -21,8 +25,21 @@ export const apiSlice = createApi({
         body: post
       }),
       invalidatesTags:  ['Post'],
+    }),
+    editPost: builder.mutation({
+      query: post => ({
+        url: `/posts/${post.id}`,
+        method: 'PATCH',
+        body: post
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: 'Post', id: arg.id }]
+    }),
+    getUsers: builder.query({
+      query: () => '/users'
     })
   })
 })
 
-export const { useGetPostsQuery, useGetPostQuery, useAddPostMutation } = apiSlice
+export const { 
+  useGetPostsQuery, useGetUsersQuery, useGetPostQuery, useAddPostMutation, useEditPostMutation, 
+} = apiSlice
