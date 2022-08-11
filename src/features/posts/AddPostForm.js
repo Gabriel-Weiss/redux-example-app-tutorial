@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
+
+import { Spinner } from '../../components/Spinner'
 import { useAddPostMutation } from '../../api/apiSlice'
 import { selectAllUsers } from '../users/usersSlice'
 
@@ -8,7 +10,7 @@ export const AddPostForm = () => {
   const [content, setContent] = useState('')
   const [userId, setUserId] = useState('')
 
-  const [addPost, {isLoading}] = useAddPostMutation()
+  const [addNewPost, { isLoading }] = useAddPostMutation()
   const users = useSelector(selectAllUsers)
 
   const onTitleChanged = (e) => setTitle(e.target.value)
@@ -20,7 +22,7 @@ export const AddPostForm = () => {
   const onSavePostClicked = async () => {
     if (canSave) {
       try {
-        await addPost({ title, content, user: userId }).unwrap()
+        await addNewPost({ title, content, user: userId }).unwrap()
         setTitle('')
         setContent('')
         setUserId('')
@@ -39,6 +41,8 @@ export const AddPostForm = () => {
     </option>
   ))
 
+  const spinner = isLoading ? <Spinner size="30px" /> : null
+
   return (
     <section>
       <h2>Add a New Post</h2>
@@ -48,6 +52,7 @@ export const AddPostForm = () => {
           type="text"
           id="postTitle"
           name="postTitle"
+          placeholder="What's on your mind?"
           value={title}
           onChange={onTitleChanged}
         />
@@ -63,9 +68,17 @@ export const AddPostForm = () => {
           value={content}
           onChange={onContentChanged}
         />
-        <button type="button" onClick={onSavePostClicked} disabled={!canSave}>
-          Save Post
-        </button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <button type="button" onClick={onSavePostClicked} disabled={!canSave}>
+            Save Post
+          </button>
+          {spinner}
+        </div>
       </form>
     </section>
   )

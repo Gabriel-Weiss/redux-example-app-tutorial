@@ -1,17 +1,19 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+
+import { Spinner } from '../../components/Spinner'
+import { useGetPostQuery } from '../../api/apiSlice'
+
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from './TimeAgo'
 import { ReactionButtons } from './ReactionButtons'
-import { useGetPostQuery } from '../../api/apiSlice'
-import { Spinner } from '../../components/Spinner'
 
 export const SinglePostPage = ({ match }) => {
   const { postId } = match.params
+
   const { data: post, isFetching, isSuccess } = useGetPostQuery(postId)
 
   let content
-
   if (isFetching) {
     content = <Spinner text="Loading..." />
   } else if (isSuccess) {

@@ -1,9 +1,12 @@
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import classnames from 'classnames'
+
+import { Spinner } from '../../components/Spinner'
 import { PostAuthor } from './PostAuthor'
 import { TimeAgo } from './TimeAgo'
 import { ReactionButtons } from './ReactionButtons'
-import { Spinner } from '../../components/Spinner'
+
 import { useGetPostsQuery } from '../../api/apiSlice'
 
 let PostExcerpt = ({ post }) => {
@@ -24,19 +27,20 @@ let PostExcerpt = ({ post }) => {
   )
 }
 
-PostExcerpt = React.memo(PostExcerpt)
-
 export const PostsList = () => {
   const {
     data: posts = [],
     isLoading,
+    isFetching,
     isSuccess,
     isError,
     error,
   } = useGetPostsQuery()
 
   const sortedPosts = useMemo(() => {
-    return posts.slice().sort((a, b) => b.date.localeCompare(a.date))
+    const sortedPosts = posts.slice()
+    sortedPosts.sort((a, b) => b.date.localeCompare(a.date))
+    return sortedPosts
   }, [posts])
 
   let content
@@ -44,7 +48,15 @@ export const PostsList = () => {
   if (isLoading) {
     content = <Spinner text="Loading..." />
   } else if (isSuccess) {
-    content = sortedPosts.map((post) => <PostExcerpt key={post.id} post={post} />)
+    const renderedPosts = sortedPosts.map((post) => (
+      <PostExcerpt key={post.id} post={post} />
+    ))
+
+    const containerClassname = classnames('posts-container', {
+      disabled: isFetching,
+    })
+
+    content = <div className={containerClassname}>{renderedPosts}</div>
   } else if (isError) {
     content = <div>{error.toString()}</div>
   }

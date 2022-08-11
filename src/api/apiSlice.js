@@ -1,45 +1,71 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 export const apiSlice = createApi({
-  // The cache reducer(optional) expects to be added at `state.api` (this is default)
   reducerPath: 'api',
-  // All of our requests will have URLs starting with '/fakeApi'
   baseQuery: fetchBaseQuery({ baseUrl: '/fakeApi' }),
   tagTypes: ['Post'],
-  endpoints: builder => ({
+  endpoints: (builder) => ({
     getPosts: builder.query({
       query: () => '/posts',
       providesTags: (result = [], error, arg) => [
         'Post',
-        ...result.map(({ id }) => ({ type: 'Post', id }))
-      ]
+        ...result.map(({ id }) => ({ type: 'Post', id })),
+      ],
     }),
     getPost: builder.query({
-      query: id => `/posts/${id}`,
-      providesTags: (result, error, arg) => [{ type: 'Post', id: arg }]
+      query: (postId) => `/posts/${postId}`,
+      providesTags: (result, error, arg) => [{ type: 'Post', id: arg }],
     }),
     addPost: builder.mutation({
-      query: post => ({
-        url:'/posts',
+      query: (initialPost) => ({
+        url: '/posts',
         method: 'POST',
-        body: post
+        body: initialPost,
       }),
-      invalidatesTags:  ['Post'],
+      invalidatesTags: ['Post'],
     }),
     editPost: builder.mutation({
-      query: post => ({
-        url: `/posts/${post.id}`,
+      query: (post) => ({
+        url: `posts/${post.id}`,
         method: 'PATCH',
-        body: post
+        body: post,
       }),
-      invalidatesTags: (result, error, arg) => [{ type: 'Post', id: arg.id }]
+      invalidatesTags: (result, error, arg) => [{ type: 'Post', id: arg.id }],
     }),
-    getUsers: builder.query({
-      query: () => '/users'
-    })
-  })
+    addReaction: builder.mutation({
+      query: ({ postId, reaction }) => ({
+        url: `posts/${postId}/reactions`,
+        method: 'POST',
+        // In a real app, we'd probably need to base this on user ID somehow
+        // so that a user can't do the same reaction more than once
+        body: { reaction },
+      }),
+      async onQueryStarted({ postId, reaction }, { dispatch, queryFulfilled }) {
+        // `updateQueryData` requires the endpoint name and cache key arguments,
+        // so it knows which piece of cache state to update
+        const patchResult = dispatch(
+          apiSlice.util.updateQueryData('getPosts', undefined, (draft) => {
+            // The `draft` is Immer-wrapped and can be "mutated" like in createSlice
+            const post = draft.find((post) => post.id === postId)
+            if (post) {
+              post.reactions[reaction]++
+            }
+          })
+        )
+        try {
+          await queryFulfilled
+        } catch {
+          patchResult.undo()
+        }
+      },
+    }),
+  }),
 })
 
-export const { 
-  useGetPostsQuery, useGetUsersQuery, useGetPostQuery, useAddPostMutation, useEditPostMutation, 
+export const {
+  useGetPostsQuery,
+  useGetPostQuery,
+  useAddPostMutation,
+  useEditPostMutation,
+  useAddReactionMutation,
 } = apiSlice
